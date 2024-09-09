@@ -161,6 +161,9 @@ ds["vorticity"] = grid.interp(vg_x, "X", to="center", boundary="extend") - grid.
 field1 = Field.from_xarray(ds["vorticity"], "vorticity", dimensions)
 fs.add_field(field1)
 
+########### Field vs field set !!!!!!!!
+# I have a field but lexi has field set !!!!!!
+
 
 print("Vorticity added")
 
@@ -171,21 +174,34 @@ print("Vorticity added")
 
 
 
-
+####lexis original code
 ### Create particleset ###
 class SpinnyParticle(JITParticle):
     u = Variable('u',dtype=np.float64)
     v = Variable('v',dtype=np.float64)
     vort = Variable('vort',dtype=np.float64)
     
-pset_dynamic,num_particles = particle_grid2d(field1,SpinnyParticle,
+pset_dynamic,num_particles = particle_grid2d(fs,SpinnyParticle,
                                              [grid_bounds['lat_bound_south'],grid_bounds['lat_bound_north'],grid_bounds['lag_grid_res']],
                                              [grid_bounds['lon_bound_west'],grid_bounds['lon_bound_east'],grid_bounds['lag_grid_res']],
                                              start_date)
 
+
+### stella trying to fix it
+
+
+
+
+
+
+
+
+
+
+
 ### Execute particle simulation ###
 print("Running Lagrangian simulation ...")
-traj_output_file_path = lag_traj_dir + str(date_input) + '_' + filename_str + '.nc'
+traj_output_file_path = lag_traj_dir + str(date_input) + '_' + filename_str + '.zarr'
 simulate_particles2d(pset_dynamic,traj_output_file_path,
                      sim_params['runtime'],sim_params['runtime_unit'],
                      sim_params['timestep'],sim_params['output_freq'],
