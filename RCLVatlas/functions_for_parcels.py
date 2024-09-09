@@ -82,8 +82,16 @@ def particle_grid2d(fieldset,custom_particle,lat_params,lon_params,time):
     lats = list(itertools.chain.from_iterable([list(lat_array)]*len(lon_array)))
     lons = list(itertools.chain.from_iterable([[l]*len(lat_array) for l in lon_array]))
     print('Number of particles initialized: %s'%(len(lats)))
-    
-    pset_grid = ParticleSet.from_list(fieldset = fieldset, pclass = custom_particle, lon = lons, lat = lats, depth = [0]*len(lons), time = time)
+
+### works until here    
+    pset_grid = ParticleSet.from_list(
+        fieldset = fieldset, 
+        pclass = custom_particle, 
+        lon = lons, 
+        lat = lats, 
+        depth = [0]*len(lons), 
+        time = time
+    )
     
     return pset_grid,len(lats)
 
@@ -102,6 +110,8 @@ def simulate_particles2d(pset,output_file_path,runtime,runtime_unit,timestep_min
     """
 
     ## Create output file & remove contents of the existing file (if it already exists) to ensure the code writes the new data to the file
+
+    ### stella- change this to work for .zarr otherwise you have to delete the folder every time
     if os.path.exists(output_file_path):
         f = open(output_file_path, 'w')
         f.close()      
@@ -129,9 +139,10 @@ def simulate_particles2d(pset,output_file_path,runtime,runtime_unit,timestep_min
     pset.execute(AdvectionRK4+custom_kernel,
                 runtime=timedelta(hours=runtime*runtime_multiplier),
                 dt=timedelta_multiplier*timedelta(minutes=timestep_mins),
-                output_file=output_file,
-                recovery={StatusCode.ErrorOutOfBounds: DeleteParticle})        
-    output_file.close() #deletes the Parcels output folder with npy files we don't need anymore
+                output_file=output_file
+                # recovery={StatusCode.ErrorOutOfBounds: DeleteParticle}
+                )        
+    # output_file.close() #deletes the Parcels output folder with npy files we don't need anymore
     
 def calc_LAVD(vort,output_freq,runtime):
     vort_avg_t = np.nanmean(vort,axis=0)[1:] #Find average vorticity over the entire spatial domain at each time step
