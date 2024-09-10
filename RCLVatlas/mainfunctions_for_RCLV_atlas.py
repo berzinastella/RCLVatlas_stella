@@ -49,7 +49,7 @@ def LAVD_to_RCLV(initial_date):
     
     # Load data
     # traj = xr.open_dataset(join(lag_traj_dir, f"lavd_{initial_date('%Y%m%d')}.zarr"))
-    traj= xr.open_dataset("/home/b/b382618/RCLVatlas_stella/lag_trajs/20020315_10days_runtime_20min_timestep_particle_start_lat_17.0_27.0_lon_262.0_272.0_spatial_step_0.05_6hr_output_freq.zarr") ### currently a very dirty one file fix
+    traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lag_traj/20020315_10days_runtime_20min_timestep_particle_start_lat_10.0_40.0_lon_230.0_260.0_spatial_step_0.05_6hr_output_freq.zarr") ### currently a very dirty one file fix
     # traj = xr.open_dataset('%s%s_%s.nc'%(lag_traj_dir,initial_date,filename_str)) #Load Lagrangian trajectories
     LAVD = np.load('%s%s_LAVD_%s.npy'%(LAVD_dir,initial_date,filename_str)) #Load LAVD data
     LAVD = np.ma.masked_where(np.isnan(LAVD),LAVD) #Land mask required for the peak_local_max function to work
