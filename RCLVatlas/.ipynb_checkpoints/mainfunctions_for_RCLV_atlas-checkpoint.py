@@ -49,7 +49,16 @@ def LAVD_to_RCLV(initial_date):
     
     # Load data
     # traj = xr.open_dataset(join(lag_traj_dir, f"lavd_{initial_date('%Y%m%d')}.zarr"))
-    traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lag_traj/20020315_10days_runtime_20min_timestep_particle_start_lat_10.0_40.0_lon_230.0_260.0_spatial_step_0.05_6hr_output_freq.zarr") ### currently a very dirty one file fix
+    # traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lag_traj/20020412_10days_runtime_20min_timestep_particle_start_lat_10.0_40.0_lon_230.0_260.0_spatial_step_0.05_6hr_output_freq.zarr") 
+
+    # traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lang_traj/20020430_10days_runtime_20min_timestep_particle_start_lat_1.0_80.0_lon_180.0_280.0_spatial_step_0.05_6hr_output_freq.zarr")
+
+    traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lang_traj/20020430_10days_runtime_20min_timestep_particle_start_lat_1.0_80.0_lon_10.0_350.0_spatial_step_0.05_6hr_output_freq.zarr")
+
+
+
+    
+    ### currently a very dirty one file fix
     # traj = xr.open_dataset('%s%s_%s.nc'%(lag_traj_dir,initial_date,filename_str)) #Load Lagrangian trajectories
     LAVD = np.load('%s%s_LAVD_%s.npy'%(LAVD_dir,initial_date,filename_str)) #Load LAVD data
     LAVD = np.ma.masked_where(np.isnan(LAVD),LAVD) #Land mask required for the peak_local_max function to work
@@ -80,7 +89,7 @@ def LAVD_to_RCLV(initial_date):
 
                     # Get the CI of the particles after simulation run time to make sure it meets threshold set
                     x_mask,y_mask = find_polygon_pts(poly_pts,traj_lon_array,traj_lat_array)                    
-                    eddy_day0_lons,eddy_day0_lats,_ = extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,1) #day 0 data
+                    eddy_day0_lons,eddy_day0_lats,_ = extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,0) #day 0 data
                     eddy_dayx_lons,eddy_dayx_lats,eddy_dayx_vorts = extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,sim_params['runtime']) # last day
                     contour_CI = CI(eddy_day0_lons,eddy_day0_lats,eddy_dayx_lons,eddy_dayx_lats) #calculate the coherency index (measure of dispersal)
 

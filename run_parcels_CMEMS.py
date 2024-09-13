@@ -66,51 +66,27 @@ import sys
 
 # to access intake catalog of eerie
 eerie_cat=intake.open_catalog("https://raw.githubusercontent.com/eerie-project/intake_catalogues/main/eerie.yaml")
-
-
-
-#########################
-#########################
-
-
-eerie_cat=intake.open_catalog("https://raw.githubusercontent.com/eerie-project/intake_catalogues/main/eerie.yaml")
-
 data_oce = eerie_cat["dkrz"]["disk"]["model-output"]["icon-esm-er"]["eerie-control-1950"]["v20231106"]["ocean"]["gr025"]["2d_daily_mean"].to_dask()
-
-data_sub=data_oce.sel(time="2002-03")
-data_sub=data_sub[["u", "v"]]
-
-data_sub['v']=data_sub['v'][:,0,:,:]
-data_sub['u']=data_sub['u'][:,0,:,:]
-
-##
-
-
 
 sys.path.append('./RCLVatlas/')
 from functions_for_parcels import *
 
 #this finds the date from what you write in the command line
 date_input = sys.argv[1] # user input: particle intialization date
+
 start_year,start_month,start_day = int(str(date_input)[0:4]),int(str(date_input)[4:6]),int(str(date_input)[6:8])
 start_date = datetime(start_year,start_month,start_day) # format datetime
+print(start_year, start_month)
+data_sub=data_oce.sel(time=str(start_year))
+data_sub=data_sub[["u", "v"]]
 
-### Create Parcels fieldset ###
-# parcels_input_files = sorted(glob(gos_vel_dir+'dt_global_allsat_phy_l4_*.nc'))
-# filenames = {'U': data_sub,'V': data_sub}
-# variables = {'U': 'ugos','V': 'vgos'} #name of the velocity variables in the netCDF file
-# dimensions = {'U': {'lon':'longitude','lat':'latitude','time':'time'},
-#               'V': {'lon':'longitude','lat':'latitude','time':'time'}}
-# fieldset = FieldSet.from_netcdf(filenames, variables, dimensions)
-
-## stella- now i need to input code that takes intake and does that
+data_sub['v']=data_sub['v'][:,0,:,:]
+data_sub['u']=data_sub['u'][:,0,:,:]
 
 
-#### all of this code is from texas guy
+#### this code chunk is from xlcs package
 ds0=data_sub
 ds = ds0.copy(deep=True)
-
-
 lon, lat = np.meshgrid(ds.lon, ds.lat)
 ds = ds.assign_coords(
     {
@@ -161,16 +137,11 @@ ds["vorticity"] = grid.interp(vg_x, "X", to="center", boundary="extend") - grid.
 field1 = Field.from_xarray(ds["vorticity"], "vorticity", dimensions)
 fs.add_field(field1)
 
-########### Field vs field set !!!!!!!!
-# I have a field but lexi has field set !!!!!!
 
 
 print("Vorticity added")
 
-### end of texas guy code
-
-
-
+### end of xlcs package code chunk
 
 
 
