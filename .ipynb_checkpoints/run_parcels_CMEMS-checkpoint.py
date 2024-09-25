@@ -1,10 +1,9 @@
-# Lexi Jones
-# Date Created: 07/15/21
-# Last Edited: 12/20/22
+# Stella Bērziņa
+# Date Created: 15/07/21 by lexi
+# Last Edited: 17/09/24 by stella
 
 # Run an OceanParcels simulation
-## this is the script that looks at config file and calculates lavd from lexi jones
-
+## this is the script that looks at config file and calculates lavd from Lexi Jones-Kellet
 import time,sys
 import numpy as np
 import xarray as xr
@@ -13,12 +12,7 @@ from datetime import datetime
 from parcels import FieldSet,Variable,JITParticle, Field
 from config import *
 
-
-################# figure out which of these are actually useful
-
-
-
-# from scipy.interpolate import CloughTocher2DInterpolator, LinearNDInterpolator, NearestNDInterpolator
+################# for sure not all of these are needed but i have them lol
 
 from numpy import arange, ones
 import matplotlib as mpl
@@ -66,51 +60,35 @@ import sys
 
 # to access intake catalog of eerie
 eerie_cat=intake.open_catalog("https://raw.githubusercontent.com/eerie-project/intake_catalogues/main/eerie.yaml")
-
-
-
-#########################
-#########################
-
-
-eerie_cat=intake.open_catalog("https://raw.githubusercontent.com/eerie-project/intake_catalogues/main/eerie.yaml")
-
 data_oce = eerie_cat["dkrz"]["disk"]["model-output"]["icon-esm-er"]["eerie-control-1950"]["v20231106"]["ocean"]["gr025"]["2d_daily_mean"].to_dask()
-
-data_sub=data_oce.sel(time="2002-03")
-data_sub=data_sub[["u", "v"]]
-
-data_sub['v']=data_sub['v'][:,0,:,:]
-data_sub['u']=data_sub['u'][:,0,:,:]
-
-##
-
-
 
 sys.path.append('./RCLVatlas/')
 from functions_for_parcels import *
 
-#this finds the date from what you write in the command line
+# this finds the date from what you write in the command line
 date_input = sys.argv[1] # user input: particle intialization date
+
+# selects the data you want to look at in time. Spatial selection in the config file
 start_year,start_month,start_day = int(str(date_input)[0:4]),int(str(date_input)[4:6]),int(str(date_input)[6:8])
 start_date = datetime(start_year,start_month,start_day) # format datetime
-
-### Create Parcels fieldset ###
-# parcels_input_files = sorted(glob(gos_vel_dir+'dt_global_allsat_phy_l4_*.nc'))
-# filenames = {'U': data_sub,'V': data_sub}
-# variables = {'U': 'ugos','V': 'vgos'} #name of the velocity variables in the netCDF file
-# dimensions = {'U': {'lon':'longitude','lat':'latitude','time':'time'},
-#               'V': {'lon':'longitude','lat':'latitude','time':'time'}}
-# fieldset = FieldSet.from_netcdf(filenames, variables, dimensions)
-
-## stella- now i need to input code that takes intake and does that
+print(start_year, start_month)
+data_sub=data_oce.sel(time=str(start_year))
+data_sub=data_sub[["u", "v"]]
+data_sub['v']=data_sub['v'][:,0,:,:]
+data_sub['u']=data_sub['u'][:,0,:,:]
 
 
-#### all of this code is from texas guy
-ds0=data_sub
-ds = ds0.copy(deep=True)
+################################## this code chunk is from xlcs package and example notebook
 
 
+# - create grid spacing variable (`dx`, `dy`) with values in meters
+# - because new values are not stored at the same location as the velocity we create two new dimensions
+#     - `longitude`, `latitude`: The variable values are located at the cell center.
+#     - `longitude_g`, `latitude_g`: The variable values are located on the cell faces, excluding both outer boundaries.
+#     - See [Simple Grids](https://xgcm.readthedocs.io/en/latest/grids.html) for more details.
+# - create the Grid object
+
+ds = data_sub.copy(deep=True)
 lon, lat = np.meshgrid(ds.lon, ds.lat)
 ds = ds.assign_coords(
     {
@@ -138,20 +116,22 @@ coords = {
     "Y": {"center": "lat", "inner": "latitude_g"},
 }
 grid = Grid(ds, periodic=[], coords=coords)
-
-
 variables = {"U": "u", "V": "v"}
-
 dimensions = {
     "time": "time",
     "lon": "lon",
     "lat": "lat",
 }
 
+# this fieldset is created to do Parcels integration
 fs = FieldSet.from_xarray_dataset(ds, variables, dimensions, mesh="spherical")
 print('Fieldset created.')
 
 #### now calculate vorticity
+# LAVD requires interpolating the vorticity along the trajectories, so we include it as an extra field to the Parcel's fieldset object `fs`. 
+
+# Note: the derivatives are interpolated back to the center of the cells.
+
 vg_x = grid.diff(ds.v, "X", boundary="extend") / ds.dx
 ug_y = grid.diff(ds.u, "Y", boundary="extend") / ds.dy
 ds["vorticity"] = grid.interp(vg_x, "X", to="center", boundary="extend") - grid.interp(
@@ -161,31 +141,27 @@ ds["vorticity"] = grid.interp(vg_x, "X", to="center", boundary="extend") - grid.
 field1 = Field.from_xarray(ds["vorticity"], "vorticity", dimensions)
 fs.add_field(field1)
 
-
 print("Vorticity added")
+################################## end of xlcs package code chunk
 
-### end of texas guy code
-
-
-
+# at this point we have not run the parcels. We have just created fieldset with velocity and vorticity
 
 
-
-
+################################## RCLVatlas original code
 ### Create particleset ###
 class SpinnyParticle(JITParticle):
     u = Variable('u',dtype=np.float64)
     v = Variable('v',dtype=np.float64)
     vort = Variable('vort',dtype=np.float64)
     
-pset_dynamic,num_particles = particle_grid2d(field1,SpinnyParticle,
+pset_dynamic,num_particles = particle_grid2d(fs,SpinnyParticle,
                                              [grid_bounds['lat_bound_south'],grid_bounds['lat_bound_north'],grid_bounds['lag_grid_res']],
                                              [grid_bounds['lon_bound_west'],grid_bounds['lon_bound_east'],grid_bounds['lag_grid_res']],
                                              start_date)
 
 ### Execute particle simulation ###
 print("Running Lagrangian simulation ...")
-traj_output_file_path = lag_traj_dir + str(date_input) + '_' + filename_str + '.nc'
+traj_output_file_path = lag_traj_dir + str(date_input) + '_' + filename_str + '.zarr'
 simulate_particles2d(pset_dynamic,traj_output_file_path,
                      sim_params['runtime'],sim_params['runtime_unit'],
                      sim_params['timestep'],sim_params['output_freq'],
@@ -206,7 +182,7 @@ print('LAVD output file: %s'%(LAVD_output_file_path))
 
 
 
-# #### version 2 original 
+# #### the original version 
 # # Lexi Jones
 # # Date Created: 07/15/21
 # # Last Edited: 12/20/22

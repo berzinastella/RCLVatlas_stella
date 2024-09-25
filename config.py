@@ -6,15 +6,15 @@ import numpy as np
 
 ### Directory paths ### 
 # gos_vel_dir = './CMEMS_data/' # Geostrophic velocity directory
-lag_traj_dir = '/scratch/b/b382618/lang_eddies/lang_traj/' # Lagrangian trajectory directory
-LAVD_dir = '/scratch/b/b382618/lang_eddies/LAVD/' # LAVD directory 
-RCLV_dir = '/scratch/b/b382618/lang_eddies/RCLV_dir/' #RCLVatlas directory
+lag_traj_dir = '/scratch/b/b382618/8day/lang_traj/' # Lagrangian trajectory directory
+LAVD_dir = '/scratch/b/b382618/8day/LAVD/' # LAVD directory 
+RCLV_dir = '/scratch/b/b382618/8day/RCLV_dir/' #RCLVatlas directory
 
-grid_bounds = {'lon_bound_west':10.0,
-               'lon_bound_east':12.0,
-               'lat_bound_south':-80.0,
-               'lat_bound_north':-70.0,
-               'lag_grid_res':0.05}
+grid_bounds = {'lon_bound_west':180.0,
+               'lon_bound_east':210.0,
+               'lat_bound_south':10.0,
+               'lat_bound_north':40.0,
+               'lag_grid_res':0.03125}
 
 
 ## NW quadrant
@@ -25,7 +25,7 @@ grid_bounds = {'lon_bound_west':10.0,
 #                'lag_grid_res':0.03125}
 
 
-sim_params = {'runtime':10, 
+sim_params = {'runtime':8, 
               'runtime_unit':'days',
               'timestep':20, 
               'output_freq':6,

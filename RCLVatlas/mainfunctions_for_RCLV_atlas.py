@@ -23,6 +23,7 @@ from skimage.feature import peak_local_max
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon 
 from subfunctions_for_RCLV_atlas import *
+import glob
 
 sys.path.append('../')
 from config import *
@@ -45,21 +46,14 @@ def LAVD_to_RCLV(initial_date):
         pols: Polarity (cyclonic or anticyclonic) of the vortex
     
     """
-#### stella- I now try to make it work with zarr and not .nc bc parcels/or floater no longer supports .nc files
-    
+#### this originally was with .nc but Parcels no longer support that so I changed it to .zarr
+
     # Load data
-    # traj = xr.open_dataset(join(lag_traj_dir, f"lavd_{initial_date('%Y%m%d')}.zarr"))
-    # traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lag_traj/20020412_10days_runtime_20min_timestep_particle_start_lat_10.0_40.0_lon_230.0_260.0_spatial_step_0.05_6hr_output_freq.zarr") 
+    lang_traj_path = glob.glob(lag_traj_dir + "/"+str(initial_date)+"_*")
+    print(lang_traj_path)
+    traj = xr.open_dataset(lang_traj_path[0])
+    # traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lang_traj/20020430_10days_runtime_20min_timestep_particle_start_lat_-80.0_80.0_lon_10.0_350.0_spatial_step_0.05_6hr_output_freq.zarr")
 
-    # traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lang_traj/20020430_10days_runtime_20min_timestep_particle_start_lat_1.0_80.0_lon_180.0_280.0_spatial_step_0.05_6hr_output_freq.zarr")
-
-    traj= xr.open_dataset("/scratch/b/b382618/lang_eddies/lang_traj/20020430_10days_runtime_20min_timestep_particle_start_lat_1.0_80.0_lon_10.0_350.0_spatial_step_0.05_6hr_output_freq.zarr")
-
-
-
-    
-    ### currently a very dirty one file fix
-    # traj = xr.open_dataset('%s%s_%s.nc'%(lag_traj_dir,initial_date,filename_str)) #Load Lagrangian trajectories
     LAVD = np.load('%s%s_LAVD_%s.npy'%(LAVD_dir,initial_date,filename_str)) #Load LAVD data
     LAVD = np.ma.masked_where(np.isnan(LAVD),LAVD) #Land mask required for the peak_local_max function to work
     LAVD_reshape = np.transpose(np.reshape(LAVD,(len(traj_lon_array),len(traj_lat_array))))
@@ -180,7 +174,7 @@ def track_and_ID_RCLVs(RCLV_data,date_list):
         print(date)
 
         # Open the Lagrangian trajectory data for the current date
-        traj = xr.open_dataset('%s%s_%s.nc'%(lag_traj_dir,date,filename_str))
+        traj = xr.open_dataset('%s%s_%s.zarr'%(lag_traj_dir,date,filename_str))
         particle_lon,particle_lat = traj.variables["lon"],traj.variables["lat"]
         
         day_inds = np.where((np.array([row[0] for row in RCLV_data]) == date))[0] # Get indeces of the RCLV data from the current date
@@ -202,12 +196,12 @@ def track_and_ID_RCLVs(RCLV_data,date_list):
                         if counter == 1: # get trajectory from the open dataset for 1 timestep back
                             days_btwn = num_days_between(new_date,date) # num of days between date & new_date (typically 8 except for when in between years)
                             # Get lat,lon coords of center particle back 1 timestep
-                            backxdays_center_lon = float(particle_lon[particle_num,days_btwn*int(24/sim_params['output_freq'])])
-                            backxdays_center_lat = float(particle_lat[particle_num,days_btwn*int(24/sim_params['output_freq'])])
+                            backxdays_center_lon = float(particle_lon[particle_num,days_btwn*int((24/sim_params['output_freq'])-1)])
+                            backxdays_center_lat = float(particle_lat[particle_num,days_btwn*int((24/sim_params['output_freq'])-1)])
 
                         else: # open traj dataset for previous date (sequentially forward one timestep) to track particle to current date (counter will be > 1)
                             prev_date = date_list[d+counter-1] # forward one time step from new date
-                            prev_traj = xr.open_dataset('%s%s_%s.nc'%(lag_traj_dir,prev_date,filename_str))
+                            prev_traj = xr.open_dataset('%s%s_%s.zarr'%(lag_traj_dir,prev_date,filename_str))
                             prev_particle_lon,prev_particle_lat = prev_traj.variables["lon"],prev_traj.variables["lat"]
 
                             # The new 'center position' will not line up perfectly with the grid of the next initialization, so need to use find_nearest()
@@ -218,8 +212,8 @@ def track_and_ID_RCLVs(RCLV_data,date_list):
                             particle_num = x_ind*len(traj_lat_array) + y_ind #identifier for the center particle in prev_traj_file
 
                             # Replace old variables with the locations tracked back 8 more days
-                            backxdays_center_lon = float(prev_particle_lon[particle_num,days_btwn*int(24/sim_params['output_freq'])])
-                            backxdays_center_lat = float(prev_particle_lat[particle_num,days_btwn*int(24/sim_params['output_freq'])])
+                            backxdays_center_lon = float(prev_particle_lon[particle_num,days_btwn*int((24/sim_params['output_freq'])-1)])
+                            backxdays_center_lat = float(prev_particle_lat[particle_num,days_btwn*int((24/sim_params['output_freq'])-1)])
 
                         # Check if the center particle back 1 timestep is inside another contour; if so, assign the contour the RCLV ID
                         new_center_point = Point(backxdays_center_lon,backxdays_center_lat)
@@ -320,7 +314,7 @@ def interpolate_skipped_contours(RCLV_data,log_file,date_list):
     """
     
     print('Checking if any RCLVs skipped a date...')
-    RCLV_data_no_header = np.array(RCLV_data)[1:]
+    RCLV_data_no_header = np.array(RCLV_data, dtype="object")[1:]
     all_ids = np.unique([r[1] for r in RCLV_data[1:]])
     
     # Sort eddy ids into dictionaries that contain their first and last date they appear in the dataset
@@ -340,7 +334,7 @@ def interpolate_skipped_contours(RCLV_data,log_file,date_list):
         current_date = date_list[d]
         print(current_date)
         
-        traj = xr.open_dataset('%s%s_%s.nc'%(lag_traj_dir,current_date,filename_str)) 
+        traj = xr.open_dataset('%s%s_%s.zarr'%(lag_traj_dir,current_date,filename_str)) 
         particle_lon,particle_lat = traj.variables["lon"],traj.variables["lat"]
         
         for n in [2,3]: #check 2 timesteps back, then 3 timesteps back; contours 1 step back have been given ID already in the tracking function
@@ -361,6 +355,11 @@ def interpolate_skipped_contours(RCLV_data,log_file,date_list):
                 particle_num = x_ind*len(traj_lat_array) + y_ind #identifier for the center particle
 
                 # Get location of center particle back 2 time steps (~16 days) or 3 time steps (~24 days)
+                print("days_btwn_ntimesteps:" + str(days_btwn_ntimesteps))
+                print(particle_lon)
+                # back_ntimesteps_center_lon = float(particle_lon[particle_num, int(((24/sim_params['output_freq'])*days_btwn_ntimesteps)-1)])
+                
+                # i think that the particle lon is only 1 6 day period, so it does not work if i have 2x time steps.
                 back_ntimesteps_center_lon = float(particle_lon[particle_num,int(24/sim_params['output_freq'])*days_btwn_ntimesteps])
                 back_ntimesteps_center_lat = float(particle_lat[particle_num,int(24/sim_params['output_freq'])*days_btwn_ntimesteps])
                 new_center_point = Point(back_ntimesteps_center_lon,back_ntimesteps_center_lat)
