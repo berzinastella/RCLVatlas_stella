@@ -5,6 +5,7 @@ import numpy as np
 import math,os,itertools
 from datetime import timedelta
 from parcels import ParticleSet,AdvectionRK4,StatusCode
+from config import *
 
 def CalcVort(particle, fieldset, time):  
     """
@@ -148,3 +149,22 @@ def calc_LAVD(vort,output_freq,runtime):
     vort_avg_t = np.nanmean(vort,axis=0)[1:] #Find average vorticity over the entire spatial domain at each time step
     LAVD = np.trapz(np.absolute(vort[:,1:] - vort_avg_t), dx=output_freq*60*60, axis=1)/(runtime*24*60*60-output_freq*60*60) #trapz does the integration; convert data to be in seconds units
     return LAVD
+
+
+
+def calc_LAVD_spec_time(vort,output_freq,runtime, LAVD_days):
+    vort_avg_t = np.nanmean(vort,axis=0)[1:] #Find average vorticity over the entire spatial domain at each time step
+    LAVD = np.trapz(np.absolute(vort[:,0:LAVD_days] - vort_avg_t[:LAVD_days]), dx=output_freq*60*60, axis=1)/(LAVD_days*24*60*60-output_freq*60*60) #trapz does the integration; convert data to be in se
+    return LAVD
+
+
+
+def trajectories_to_specific_day_LAVD(traj_path, LAVD_days):
+    print("Calculating the LAVD ...")
+    traj_ds = xr.open_dataset(traj_path) # open the Lagrangian trajectory dataset that was just produced
+    vort_premask = traj_ds.variables["vort"]
+    vort = np.array(vort_premask.where(vort_premask != 0)) #filters out land values
+    LAVD = calc_LAVD_spec_time(vort,sim_params['output_freq'],sim_params['runtime'], LAVD_days)
+    LAVD_output_file_path = traj_path + str(LAVD_days) +'days.npy'
+    np.save(LAVD_output_file_path,LAVD)
+    print('LAVD output file: %s'%(LAVD_output_file_path))

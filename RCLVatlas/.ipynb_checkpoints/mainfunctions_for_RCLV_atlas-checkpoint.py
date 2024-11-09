@@ -84,10 +84,13 @@ def LAVD_to_RCLV(initial_date):
                     # Get the CI of the particles after simulation run time to make sure it meets threshold set
                     x_mask,y_mask = find_polygon_pts(poly_pts,traj_lon_array,traj_lat_array)                    
                     eddy_day0_lons,eddy_day0_lats,_ = extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,0) #day 0 data
+                    # print("eddy_day0_lons:",eddy_day0_lons[100],eddy_day0_lats[100]) 
                     eddy_dayx_lons,eddy_dayx_lats,eddy_dayx_vorts = extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,sim_params['runtime']) # last day
+                    # print("eddy_dayx_lons:",eddy_dayx_lons[100],eddy_dayx_lats[100])
+                    # print("runtime:", sim_params['runtime'])
                     contour_CI = CI(eddy_day0_lons,eddy_day0_lats,eddy_dayx_lons,eddy_dayx_lats) #calculate the coherency index (measure of dispersal)
-
-                    if (contour_CI >= -0.5): # Coherency index criteria, minimal dispersal required
+                    print("CI: ",contour_CI)
+                    if (contour_CI <= 0.5): # Coherency index criteria, minimal dispersal required
                         # Check that the vorticty is consistent within the vortex over the course of the simulation (filters out some weird saddle point features,etc)
                         # Timestep to get initial vorticity needs to be day 1 since at day 0 all particles are initialized with vort=0
                         eddy_day1_lons,eddy_day1_lats,eddy_day1_vorts = extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,1) 

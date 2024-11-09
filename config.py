@@ -5,10 +5,22 @@
 import numpy as np
 
 ### Directory paths ### 
-# gos_vel_dir = './CMEMS_data/' # Geostrophic velocity directory
-lag_traj_dir = '/scratch/b/b382618/8day/lang_traj/' # Lagrangian trajectory directory
-LAVD_dir = '/scratch/b/b382618/8day/LAVD/' # LAVD directory 
-RCLV_dir = '/scratch/b/b382618/8day/RCLV_dir/' #RCLVatlas directory
+# # gos_vel_dir = './CMEMS_data/' # Geostrophic velocity directory
+# lag_traj_dir = '/work/bk1377/b382618/RCLVs/32day/lang_traj/' # Lagrangian trajectory directory
+# LAVD_dir = '/work/bk1377/b382618/RCLVs/32day/LAVD/' # LAVD directory 
+# RCLV_dir = '/work/bk1377/b382618/RCLVs/32day/RCLV_dir/' #RCLVatlas directory
+
+# lag_traj_dir = '/work/bk1377/b382618/RCLVs/f8day/lang_traj/' # Lagrangian trajectory directory
+# LAVD_dir = '/work/bk1377/b382618/RCLVs/f8day/LAVD/' # LAVD directory 
+# RCLV_dir = '/work/bk1377/b382618/RCLVs/f8day/RCLV_dir/' #RCLVatlas directory
+
+lag_traj_dir = '/work/bk1377/b382618/RCLVs/8day/lang_traj/' # Lagrangian trajectory directory
+LAVD_dir = '/work/bk1377/b382618/RCLVs/8day/LAVD/' # LAVD directory 
+RCLV_dir = '/work/bk1377/b382618/RCLVs/8day/RCLV_dir_positive/' #RCLVatlas directory
+
+
+
+#path = "/work/bk1377/b382618/RCLVs/8day/RCLV_dir/RCLV_20100501_20100906_atlas.csv"
 
 grid_bounds = {'lon_bound_west':180.0,
                'lon_bound_east':210.0,
@@ -25,7 +37,7 @@ grid_bounds = {'lon_bound_west':180.0,
 #                'lag_grid_res':0.03125}
 
 
-sim_params = {'runtime':8, 
+sim_params = {'runtime':32, 
               'runtime_unit':'days',
               'timestep':20, 
               'output_freq':6,

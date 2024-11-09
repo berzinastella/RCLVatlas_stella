@@ -48,15 +48,22 @@ def extract_particles_after_time(traj,x_mask,y_mask,traj_lat_array,sim_params,da
     """
     particle_lon,particle_lat,particle_vort = traj.variables["lon"],traj.variables["lat"],traj.variables["vort"] #read in particle location lat, lons, vorts
     particle_nums = x_mask*len(traj_lat_array) + y_mask #formula to get the integer ID of the particles inside a polygon
-    print(particle_nums.shape)
-    print(particle_lon.shape)
-    print(days)
-    print(int(24/sim_params['output_freq'])*days)
-    
-######Stella- added -1 to the int bc i though that the indexing does not work bc of that. M         
-    eddy_xday_lons = [float(particle_lon[p,int(((24/sim_params['output_freq'])*days)-1)]) for p in particle_nums]   
-    eddy_xday_lats = [float(particle_lat[p,int(((24/sim_params['output_freq'])*days)-1)]) for p in particle_nums]
-    eddy_xday_vorts = [float(particle_vort[p,int(((24/sim_params['output_freq'])*days)-1)]) for p in particle_nums]
+    # print(particle_nums.shape)
+    # print(particle_lon.shape)
+    # print(days)
+    # print(int(24/sim_params['output_freq'])*days)
+    # print(particle_lat.shape)
+    # print("int(((24/sim_params['output_freq'])*days)", int(((24/sim_params['output_freq'])*days)))
+    if days==0:
+        eddy_xday_lons = [float(particle_lon[p,int(((24/sim_params['output_freq'])*days))]) for p in particle_nums]   
+        eddy_xday_lats = [float(particle_lat[p,int(((24/sim_params['output_freq'])*days))]) for p in particle_nums]
+        eddy_xday_vorts = [float(particle_vort[p,int(((24/sim_params['output_freq'])*days))]) for p in particle_nums]
+
+    else:
+######Stella- added -1 to the int bc i though that the indexing does not work bc of that. i think it should be like that because it is indexing         
+        eddy_xday_lons = [float(particle_lon[p,int(((24/sim_params['output_freq'])*days)-1)]) for p in particle_nums]   
+        eddy_xday_lats = [float(particle_lat[p,int(((24/sim_params['output_freq'])*days)-1)]) for p in particle_nums]
+        eddy_xday_vorts = [float(particle_vort[p,int(((24/sim_params['output_freq'])*days)-1)]) for p in particle_nums]
     return eddy_xday_lons,eddy_xday_lats,eddy_xday_vorts
 
 
@@ -104,6 +111,7 @@ def CI(particle_lons_t0,particle_lats_t0,particle_lons_tx,particle_lats_tx):
     """
     variance_t0 = positional_variance(particle_lons_t0,particle_lats_t0)
     variance_tx = positional_variance(particle_lons_tx,particle_lats_tx)
+    print("variance_t0: ",variance_t0,"variance_tx:", variance_tx)
     return ((variance_t0 - variance_tx)/variance_t0)
 
 def save_RCLV_CSV(RCLV_data,output_file):
